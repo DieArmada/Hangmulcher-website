@@ -144,7 +144,21 @@
     .day.selected { background: var(--green); color: white; border-color: var(--green); }
     .day:disabled { cursor: not-allowed; color: #a7aaa6; background: var(--disabled); text-decoration: line-through; }
     .booking-note { margin-top: 18px; padding: 14px; background: #f1f5ed; border-radius: 8px; color: var(--text); }
+    .booking-cta { margin-top: 16px; }
     .contact { background: #eef1eb; }
+    .selected-preview {
+      margin: 0 0 22px; padding: 16px; background: white; border: 1px solid var(--border);
+      border-radius: 10px; box-shadow: 0 5px 18px rgba(20,30,20,.04);
+    }
+    .selected-preview h3 { margin-bottom: 8px; color: var(--dark); font-size: 1.08rem; }
+    .selected-preview.empty { color: var(--muted); }
+    .date-chip {
+      display: inline-block; padding: 6px 10px; margin: 5px 6px 0 0;
+      border-radius: 999px; background: var(--green-light); color: var(--dark);
+      font-size: .92rem; font-weight: 700;
+    }
+    .form-status { min-height: 24px; font-weight: 700; }
+    .contact-help { color: var(--muted); font-size: .9rem; margin-top: -6px; }
     form { display: grid; gap: 14px; max-width: 720px; }
     input, textarea {
       width: 100%; padding: 13px 14px; border: 1px solid var(--border);
@@ -200,7 +214,7 @@
     <p class="section-intro">Zuverlässige Unterstützung bei der Pflege anspruchsvoller Flächen und bei Fahrdienstleistungen.</p>
     <div class="cards">
       <article class="card">
-        <h3>Hangmulchen mit Raupenfahrwerk</h3>
+        <h3>Hangmulcher mit Raupenfahrwerk</h3>
         <p>Der Raupenmulcher eignet sich besonders für Flächen, auf denen ein herkömmlicher Traktor nur eingeschränkt eingesetzt werden kann.</p>
         <ul>
           <li>Hang- und Böschungsflächen</li>
@@ -214,9 +228,10 @@
         <p>Fahrdienstleistungen mit land- und forstwirtschaftlichen Fahrzeugen im Rahmen der angebotenen Leistungen.</p>
         <ul>
           <li>Fahrdienst nach Absprache</li>
-          <li>Unterstützung bei landwirtschaftlichen Arbeiten</li>
+          <li>Unterstützung bei land-/forstwirtschaftlichen Arbeiten</li>
           <li>Flexible Terminvereinbarung</li>
           <li>Einsatzgebiet nach individueller Anfrage</li>
+          <li>ab 35 € pro Stunde</li>
         </ul>
       </article>
     </div>
@@ -241,7 +256,6 @@
   <section class="projects" id="projekte">
     <div class="section">
       <h2 class="section-title">Vorher &amp; Nachher</h2>
-      <p class="section-intro">Hier können später Fotos abgeschlossener Arbeiten ergänzt werden.</p>
       <div class="gallery">
         <div class="placeholder"><span>Foto Platzhalter 1</span></div>
         <div class="placeholder"><span>Foto Platzhalter 2</span></div>
@@ -254,7 +268,7 @@
   <section class="section" id="termin">
     <div class="eyebrow" style="color:var(--green)">Termin anfragen</div>
     <h2 class="section-title">Verfügbarkeit prüfen</h2>
-    <p class="section-intro">Wählen Sie einen freien Tag aus. Vergangene Tage sind automatisch deaktiviert; die Weihnachtswoche 2026 sowie der 05.08.2026 sind beispielhaft als belegt markiert.</p>
+    <p class="section-intro">Wählen Sie einen oder mehrere freie Tage aus. Ihre Auswahl erscheint direkt im Bereich „Projekt besprechen“ und wird beim Absenden mit übertragen.</p>
     <div class="calendar-wrap">
       <div class="calendar-head">
         <button class="cal-btn" id="prev" aria-label="Vorheriger Monat">‹</button>
@@ -268,6 +282,7 @@
       </div>
       <div class="calendar-grid" id="days"></div>
       <div class="booking-note" id="selection">Bitte wählen Sie einen oder mehrere freie Tage aus.</div>
+      <div class="booking-cta"><a class="btn" href="#kontakt" id="goToContact">Mit Terminauswahl zur Anfrage</a></div>
     </div>
   </section>
 
@@ -275,13 +290,37 @@
     <div class="section">
       <div class="eyebrow" style="color:var(--green)">Kontakt</div>
       <h2 class="section-title">Projekt besprechen</h2>
-      <p class="section-intro">Ersetzen Sie die Platzhalter unten durch Ihre eigenen Kontaktdaten. Das Formular ist zunächst nur eine Designvorlage.</p>
-      <form onsubmit="event.preventDefault(); alert('Vielen Dank! Für den echten Versand muss das Formular noch mit einem Formular-Dienst verbunden werden.');">
-        <input type="text" placeholder="Name" required>
-        <input type="email" placeholder="E-Mail-Adresse" required>
-        <input type="tel" placeholder="Telefon">
-        <textarea placeholder="Beschreiben Sie kurz Ihr Vorhaben …"></textarea>
+      <p class="section-intro">Füllen Sie das Formular aus. Die im Kalender ausgewählten Termine werden automatisch in Ihrer Anfrage übernommen.</p>
+
+      <div class="selected-preview empty" id="contactSelection">
+        <h3>Gewählte Termine</h3>
+        <div id="contactSelectionContent">Noch kein Termin ausgewählt.</div>
+      </div>
+
+      <!--
+        E-Mail-Versand über Formspree:
+        1. Kostenloses Formspree-Konto erstellen und ein neues Formular anlegen.
+        2. Den dort angezeigten Endpoint kopieren, z.B. https://formspree.io/f/xxxxxxxx
+        3. Unten YOUR_FORM_ID durch die eigene Form-ID ersetzen.
+      -->
+      <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" id="contactForm">
+        <input type="text" name="name" placeholder="Name" autocomplete="name" required>
+        <input type="email" name="email" placeholder="E-Mail-Adresse" autocomplete="email" required>
+        <input type="tel" name="telefon" placeholder="Telefon" autocomplete="tel">
+        <select name="dienstleistung" required>
+          <option value="" selected disabled>Bitte Dienstleistung auswählen</option>
+          <option value="Hangmulcher mit Raupenfahrwerk leihen (pro Tag 95€)">Hangmulcher mit Raupenfahrwerk leihen (pro Tag 95€)</option>
+	  <option value="Grundstücksfläche/Hang mähen/mulchen lassen (Preis auf Anfrage)">Grundstücksfläche/Hang mähen/mulchen lassen (Preis auf Anfrage)</option>
+          <option value="Fahrdienstleistung – Führerschein Klasse T">Fahrdienstleistung – Führerschein Klasse T</option>
+          <option value="Sonstige Anfrage">Sonstige Anfrage</option>
+        </select>
+        <input type="hidden" name="gewaehlte_termine" id="selectedDatesField" value="">
+        <textarea name="nachricht" placeholder="Beschreiben Sie kurz Ihr Vorhaben …"></textarea>
+        <input type="hidden" name="_subject" value="Neue Anfrage über die Hangmulcher-Website">
+        <input type="hidden" name="_format" value="plain">
+        <p class="contact-help">Nach dem Absenden werden Name, E-Mail, Telefon, Dienstleistung, gewählte Termine und Nachricht an als Anfrage gesendet.</p>
         <button class="btn" type="submit">Anfrage senden</button>
+        <div class="form-status" id="formStatus" aria-live="polite"></div>
       </form>
     </div>
   </section>
@@ -391,27 +430,54 @@
     return groups;
   }
 
-  function updateSelectionText() {
+  function getSelectionGroups() {
     const selected = [...selectedDates].sort();
+    return getDateGroups(selected);
+  }
 
-    if (selected.length === 0) {
-      selectionEl.textContent = "Bitte wählen Sie einen oder mehrere freie Tage aus.";
+  function getSelectionDisplay() {
+    return getSelectionGroups().map(([startKey, endKey]) => {
+      const startDate = parseKey(startKey);
+      const endDate = parseKey(endKey);
+      if (startKey === endKey) return formatDate(startDate);
+      return `${formatDate(startDate)}-${formatDate(endDate)}`;
+    });
+  }
+
+  function syncContactSelection() {
+    const preview = document.getElementById("contactSelection");
+    const content = document.getElementById("contactSelectionContent");
+    const hidden = document.getElementById("selectedDatesField");
+    const groups = getSelectionDisplay();
+
+    if (!preview || !content || !hidden) return;
+
+    hidden.value = groups.join(" · ");
+
+    if (groups.length === 0) {
+      preview.classList.add("empty");
+      content.textContent = "Noch kein Termin ausgewählt.";
       return;
     }
 
-    const groups = getDateGroups(selected);
-    const groupText = groups.map(([startKey, endKey]) => {
-      const startDate = parseKey(startKey);
-      const endDate = parseKey(endKey);
-      if (startKey === endKey) {
-        return formatDate(startDate);
-      }
-      return `${formatDate(startDate)}-${formatDate(endDate)}`;
-    });
+    preview.classList.remove("empty");
+    content.innerHTML = groups.map(group => `<span class="date-chip">${group}</span>`).join("");
+  }
+
+  function updateSelectionText() {
+    const groups = getSelectionDisplay();
+
+    if (groups.length === 0) {
+      selectionEl.textContent = "Bitte wählen Sie einen oder mehrere freie Tage aus.";
+      syncContactSelection();
+      return;
+    }
 
     selectionEl.innerHTML =
-      `<strong>Ausgewählte Zeiträume (${groups.length}):</strong> ${groupText.join(" · ")}<br>` +
+      `<strong>Ausgewählte Zeiträume (${groups.length}):</strong> ${groups.join(" · ")}<br>` +
       `<span style="color:#697269">Zusammenhängende Tage werden automatisch zu einem Zeitraum zusammengefasst. Ein erneuter Klick auf einen ausgewählten Tag entfernt ihn wieder.</span>`;
+
+    syncContactSelection();
   }
 
   function toggleDate(dateKey, button) {
@@ -460,7 +526,19 @@
             if (shouldSelect) selectedDates.add(x.key);
             else selectedDates.delete(x.key);
           });
-          renderCalendar();
+          const contactForm = document.getElementById("contactForm");
+  const formStatus = document.getElementById("formStatus");
+
+  contactForm.addEventListener("submit", (event) => {
+    const action = contactForm.getAttribute("action") || "";
+    if (action.includes("YOUR_FORM_ID")) {
+      event.preventDefault();
+      formStatus.textContent = "Bitte zuerst die eigene Formspree-Form-ID im HTML eintragen. Danach wird die Anfrage per E-Mail versendet.";
+      formStatus.style.color = "#8a5a00";
+    }
+  });
+
+    renderCalendar();
         });
       }
       daysEl.appendChild(kw);
